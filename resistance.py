@@ -1,5 +1,6 @@
-from random import shuffle
-from player import Player
+from random  import shuffle
+from player  import Player
+from mission import Mission
 
 class Resistance:
     
@@ -17,8 +18,8 @@ class Resistance:
         self.leader = 0 # Index to players list of current leader
         
         # Initialize mission list
-        self.missions = [0,0,0,0,0]
-        
+        self.missions = []
+
         
     def readyCheck(self,players):
         """Return False if any player in players hasn't voted."""
@@ -61,8 +62,18 @@ class Resistance:
                         print "Please respond with just 'y' or 'n'"
         # Print the player list in debug mode
         if self.debug: print [player.name for player in self.players]
-
-
+            
+            
+    def initMissions(self):
+        """Assume players list is populated and won't be changing anymore.
+        Populate the mission list with new Mission objects.
+        """
+        assert 5 <= len(self.players) <= 10
+        for i in range(5):
+            misNum = i+1
+            self.missions.append(Mission(misNum, self.players, debug=self.debug))
+            
+            
     def assignSpies(self):
         """Assume players list is properly populated and shuffle them and
         assign spies.
@@ -78,6 +89,45 @@ class Resistance:
         
         # Print the names of spies in debug mode
         if self.debug: print "Spies are:\n"+str([spy.name for spy in spies])
+        
+        
+    def nextMission(self):
+        """return the lowest index mission in missions that still has a result
+        of 0.
+        """
+        for mission in self.missions:
+            if mission.result == 0:
+                if self.debug: print "next Mission returned:",mission.missionNumber
+                return mission
+        assert False, "No nextMission found!"
+
+
+    def spiesWin(self):
+        """Return True if the spies have won the game."""
+        standings    = 0
+        missionsLeft = 0        
+        for mission in self.missions:
+            if mission.result == 0:
+                missionsLeft += 1
+            standings += mission.result
+        win = standings + missionsLeft < 0
+        if self.debug: print "standings,missionsLeft:",standings,missionsLeft
+        if self.debug: print "Spies win?", win
+        return win
+        
+        
+    def resistanceWin(self):
+        """Return True if the resistance have won the game."""
+        standings    = 0
+        missionsLeft = 0
+        for mission in self.missions:
+            if mission.result == 0:
+                missionsLeft += 1
+            standings += mission.result
+        win = standings - missionsLeft > 0
+        if self.debug: print "standings,missionsLeft:",standings,missionsLeft
+        if self.debug: print "Resistance win?", win
+        return win
         
         
 if __name__ == "__main__":
@@ -96,3 +146,22 @@ if __name__ == "__main__":
     game.assignSpies()
     game.resetVote()
     assert not game.readyCheck(game.players)
+    
+    game.initMissions()
+    game.spiesWin()
+    game.resistanceWin()
+    
+    game.nextMission().result = 1
+    game.nextMission().result = 1
+        
+    game.spiesWin()
+    game.resistanceWin()
+    
+    for i in range(5):
+        game.nextMission().failToCreateTeam()
+    print "failed mission result:",game.missions[2].result
+    
+    game.spiesWin()
+    game.resistanceWin()
+    
+    assert game.nextMission().result == 0
