@@ -16,6 +16,7 @@ class Resistance:
         # Initialize empty player list
         self.players = []
         self.leader = 0 # Index to players list of current leader
+        self.proposedTeam = []
         
         # Initialize mission list
         self.missions = []
@@ -41,27 +42,19 @@ class Resistance:
         shuffle(self.players)
         if self.debug:
             print "Players after shuffle:\n"+str([player.name for player in self.players])
+            print "First leader will be",self.players[self.leader].name
         return self.players
         
 
     def initPlayers(self):
-        """loop to populate players list. Called when running in text mode"""
-        response = 'y'
-        while len(self.players) < 10 and response == 'y':
-        # Ensure that the program prompts for new players until the creator is
-        # done, or the game is full
-            name = raw_input("Name of next player?\n")
-            self.players.append( Player(name,debug=self.debug) )
-            if 5 <= len(self.players) < 10:
-            # If the game isn't full, or under-populated, ask the creator if
-            # they want to add another player
-                response = ''
-                while response not in ('y','n'):
-                    response = raw_input("Would you like to add another player?(y/n)\n")
-                    if response not in ('y','n'):
-                        print "Please respond with just 'y' or 'n'"
-        # Print the player list in debug mode
-        if self.debug: print [player.name for player in self.players]
+        """Call when players are done joining. Check that player limits are
+        met and call other setup functions, such as shuffling players,
+        assigning spies, and shuffling missions."""
+        if self.debug: print "Locking in and initializing %d player game"%len(self.players)
+        assert 5 <= len(self.players) <= 10, "Must have between 5 and 10 players. You have "+str(len(self.players))
+        self.initMissions()
+        self.shufflePlayers()
+        self.assignSpies()
             
             
     def initMissions(self):
@@ -100,8 +93,35 @@ class Resistance:
                 if self.debug: print "next Mission returned:",mission.missionNumber
                 return mission
         assert False, "No nextMission found!"
-
-
+        
+        
+    def nextLeader(self):
+        """returns the index of the next leader"""
+        leader = self.leader + 1
+        if leader >= len(self.players):
+            self.leader = 0
+        else:
+            self.leader = leader
+        if self.debug: print self.players[self.leader].name, "is the new leader."
+        
+        
+    def createTeam(self):
+        """Evaluate if the vote passed to create the team. If it did, insert
+        the proposed team into the current mission. If it did not, call the
+        mission's failToCreateTeam method."""
+        assert self.proposedTeam == self.nextMission().teamSize, "Proposed team not big enough"
+        votes = []
+        for player in self.players:
+            assert player.vote != 0, "Each player must vote on the proposed team."
+            votes.append(player.vote)
+        total = 0
+        for vote in votes:
+            total += vote
+        if total > 0:
+            self.nextMission().team = self.proposedTeam
+        self.nextMission().failToCreateTeam()
+        
+        
     def spiesWin(self):
         """Return True if the spies have won the game."""
         standings    = 0
@@ -136,7 +156,7 @@ if __name__ == "__main__":
     game = Resistance(debug=True)
     
     # if this test is being run, assume the program is being tested in text mode
-    game.initPlayers()
+    game.players = [Player("Player"+str(name+1)) for name in range(5)]
     
     for player in game.players:
         player.vote = 1
@@ -165,3 +185,30 @@ if __name__ == "__main__":
     game.resistanceWin()
     
     assert game.nextMission().result == 0
+    del game
+    
+    ###########
+    # Newgame #
+    ###########
+    game = Resistance(debug=True)
+    
+    # Add 7 players
+    game.players = [Player("Player"+str(name+1)) for name in range(7)]
+    
+    # Lock-in and initialize the 7 player game
+    game.initPlayers()
+    
+    # Begin Game Loop
+    while not game.spiesWin() and not game.resistanceWin():
+        
+        #leader proposes a team
+        proposedTeam = game.players
+        shuffle(proposedTeam)
+        game.proposedTeam = proposedTeam[:game.nextMission().teamSize]
+        
+        # players vote on the team
+        for player in game.players:
+            player.vote = 1
+        
+        #
+        game.createTeam()

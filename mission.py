@@ -57,15 +57,32 @@ class Mission:
         voted on whether to pass or fail the mission. Modify self.result, if
         any players chose to fail the mission make it -1, otherwise +1.
         """
-        assert len(self.team) == self.teamSize, "Can't attempt mission with only "+\
-            str(len(self.team))+" team members."
+        if len(self.team) == self.teamSize:
+            if self.debug: print "Can't attempt mission with only "+ str(len(self.team))+" team members."
+            return False
+        assert self.result == 0, "Can't re-attempt mission."
+        votes = []
+        for player in self.team:
+            assert player.vote != 0, "Every team member must vote to attempt."
+            if self.debug: print player.name,"votes",player.vote
+            votes.append(player.vote)
+        votes.sort() # Sort the votes to protect the identity of the voters
+        if self.debug: print "votes:",votes
+        if votes[0] == -1:
+                self.result = -1
+                return votes
+        self.result = 1
+        return votes
         
         
         
 if __name__ == "__main__":
-    numPlayers = 6
-    misNum = 4
+    numPlayers = 5
+    misNum = 5
     mission = Mission(misNum, [Player(str(name+1)) for name in range(numPlayers)], debug=True)
-    while mission.result == 0:
-        mission.failToCreateTeam()
+    mission.team = mission.players[:mission.teamSize]
+    for player in mission.team:
+        player.vote = 1
+    mission.team[2].vote = -1
+    mission.attempt()
     print mission.result
