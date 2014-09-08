@@ -82,6 +82,8 @@ class Resistance:
         
         # Print the names of spies in debug mode
         if self.debug: print "Spies are:\n"+str([spy.name for spy in spies])
+        for player in spies:
+            player.spy = True
         
         
     def nextMission(self):
@@ -96,7 +98,7 @@ class Resistance:
         
         
     def nextLeader(self):
-        """returns the index of the next leader"""
+        """Increments the self.leader to represent the index of the next leader"""
         leader = self.leader + 1
         if leader >= len(self.players):
             self.leader = 0
@@ -109,7 +111,7 @@ class Resistance:
         """Evaluate if the vote passed to create the team. If it did, insert
         the proposed team into the current mission. If it did not, call the
         mission's failToCreateTeam method."""
-        assert self.proposedTeam == self.nextMission().teamSize, "Proposed team not big enough"
+        assert len(self.proposedTeam) == self.nextMission().teamSize, "Proposed team not big enough:"+str([player.name for player in self.proposedTeam])
         votes = []
         for player in self.players:
             assert player.vote != 0, "Each player must vote on the proposed team."
@@ -120,6 +122,17 @@ class Resistance:
         if total > 0:
             self.nextMission().team = self.proposedTeam
         self.nextMission().failToCreateTeam()
+        self.resetVote()
+        
+        
+    def attemptNextMission(self):
+        """Attempt the current mission. Requires that the team has already
+        been set and that each team member has already voted. Will modify the
+        mission result appropriately and clear the vote.
+        """
+        votes = self.nextMission().attempt()
+        if self.debug: print "Votes tally:", votes
+        self.resetVote()
         
         
     def spiesWin(self):
@@ -190,6 +203,7 @@ if __name__ == "__main__":
     ###########
     # Newgame #
     ###########
+    print "\n\n"
     game = Resistance(debug=True)
     
     # Add 7 players
@@ -209,6 +223,15 @@ if __name__ == "__main__":
         # players vote on the team
         for player in game.players:
             player.vote = 1
-        
-        #
         game.createTeam()
+
+        if not game.nextMission().failToCreateTeam():
+            # players on the team vote for the mission
+            for player in game.nextMission().team:
+                if player.spy:
+                    player.vote = -1
+                else:
+                    player.vote =  1
+            game.attemptNextMission()
+            
+        game.nextLeader()
