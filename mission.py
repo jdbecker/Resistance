@@ -57,7 +57,7 @@ class Mission:
         voted on whether to pass or fail the mission. Modify self.result, if
         any players chose to fail the mission make it -1, otherwise +1.
         """
-        if len(self.team) != self.teamSize:
+        if len(self.team) == self.teamSize:
             if self.debug: print "Can't attempt mission with only "+ str(len(self.team))+" team members."
             return False
         assert self.result == 0, "Can't re-attempt mission."
@@ -70,10 +70,8 @@ class Mission:
         if self.debug: print "votes:",votes
         if votes[0] == -1:
                 self.result = -1
-                if self.debug: print "Mission Failed!"
                 return votes
         self.result = 1
-        if self.debug: print "Mission Succeeded!"
         return votes
         
         
