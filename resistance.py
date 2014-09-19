@@ -163,6 +163,14 @@ class Resistance:
         return win
         
         
+    # Event handling:
+    def getEvent(self, event):
+        """If registered as a listener with an manager, this method will be
+        called whenever a new event is posted.
+        """
+        if self.debug: print "Received event:",type(event)
+        
+        
 if __name__ == "__main__":
     #li = [0,1,2,3,4]
     #print li[:2]
