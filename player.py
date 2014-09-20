@@ -8,3 +8,6 @@ class Player:
         self.name = name
         self.spy = False
         self.vote = 0
+        
+    def __repr__(self):
+        return "Player:%s"%self.name

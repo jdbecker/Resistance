@@ -1,8 +1,10 @@
+from listener import Listener
 from random  import shuffle
 from player  import Player
 from mission import Mission
+import events
 
-class Resistance:
+class Resistance(Listener):
     
     """Functions as the game state container for the Resistance game."""
     
@@ -44,6 +46,32 @@ class Resistance:
             print "Players after shuffle:\n"+str([player.name for player in self.players])
             print "First leader will be",self.players[self.leader].name
         return self.players
+        
+        
+    def nameTaken(self, name):
+        """Check that a player does not already exist with the prospective name"""
+        for player in self.players:
+            if player.name == name: return True
+        return False
+        
+        
+    def checkVote(self):
+        """Check if all the votes have been gathered for the appropriate stage
+        of the game, and kick-off the appropriate methods if so.
+        """
+        if self.nextMission(): # Voting is for some part of the next mission
+            mission = self.nextMission()
+            if mission.team: # voting is to decide if the mission succeeds
+                if not self.readyCheck(mission.team): return False
+                else: return self.attemptNextMission()
+                
+            else: # voting is to decide if the proposed mission team is deployed
+                if not self.readyCheck(self.players): return False
+                else: return self.createTeam()
+                
+        else: # Missions have not been created yet, still in setup
+            if not self.readyCheck(self.players): return False
+            else: return self.initPlayers()
         
 
     def initPlayers(self):
@@ -90,6 +118,7 @@ class Resistance:
         """return the lowest index mission in missions that still has a result
         of 0.
         """
+        if not self.missions: return None
         for mission in self.missions:
             if mission.result == 0:
                 if self.debug: print "next Mission returned:",mission.missionNumber
@@ -169,6 +198,30 @@ class Resistance:
         called whenever a new event is posted.
         """
         if self.debug: print "Received event:",type(event)
+            
+        # Player Join
+        if type(event) == events.PlayerJoin:
+            if len(self.players) < 10:
+                if self.nameTaken(event.name):
+                    return self.manager.post(events.Message("The name '%s' is already taken. Please choose another."%event.name))
+                self.manager.post(events.Message("Player %s joined"%event.name))
+                self.players.append(Player(event.name))
+                return
+            else:
+                self.manager.post(events.Message("Player %s tried to join, but there are already 10 players!"%event.name))
+                return
+                
+        # Player Vote
+        if type(event) == events.PlayerVote:
+            for player in self.players:
+                if player.name == event.name:
+                    player.vote = event.vote
+            return self.checkVote()
+                
+        # Receive Message
+        if type(event) == events.Message:
+            print event.message
+            return
         
         
 if __name__ == "__main__":

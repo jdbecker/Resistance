@@ -13,6 +13,7 @@ class Manager:
         
     def register(self, listener):
         """Adds listener to the list of registered listeners."""
+        listener.manager = self
         self.listeners[listener] = 1
         
     def unregister(self, listener):
@@ -27,10 +28,33 @@ class Manager:
             
 if __name__ == "__main__":
     from resistance import Resistance
-    from events import PlayerJoin
+    from events import PlayerJoin, PlayerVote
     
     game = Resistance(debug=True)
     manager = Manager()
     
     manager.register(game)
     manager.post(PlayerJoin("Karl"))
+    manager.post(PlayerJoin("Tim"))
+    manager.post(PlayerJoin("Tim"))    
+    manager.post(PlayerJoin("Sam"))
+    manager.post(PlayerJoin("Kim"))
+    manager.post(PlayerJoin("Alex"))
+    manager.post(PlayerJoin("Sarah"))
+    manager.post(PlayerJoin("George"))
+    manager.post(PlayerJoin("Fred"))
+    manager.post(PlayerJoin("Betty"))
+    manager.post(PlayerJoin("Lester"))
+    manager.post(PlayerJoin("Bob"))
+    
+    manager.post(PlayerVote("Karl",1))
+    manager.post(PlayerVote("Tim",1))
+    manager.post(PlayerVote("Tim",1))    
+    manager.post(PlayerVote("Sam",1))
+    manager.post(PlayerVote("Kim",1))
+    manager.post(PlayerVote("Alex",1))
+    manager.post(PlayerVote("Sarah",1))
+    manager.post(PlayerVote("George",1))
+    manager.post(PlayerVote("Fred",1))
+    manager.post(PlayerVote("Betty",1))
+    manager.post(PlayerVote("Lester",1))
